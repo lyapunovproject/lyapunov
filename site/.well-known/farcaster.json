@@ -1,0 +1,26 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjMzMzUyNDQsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhmRGMzRDgwMzdkMWVBNjUzZUVlZDE3NTE3OUY4MzUyMTc3OEU4NDIwIn0",
+    "payload": "eyJkb21haW4iOiJseWFwdW5vdi54eXoifQ",
+    "signature": "2hjruUwG6W_pVbs7J0zFnI9gKQocAlZXDlZ8QCIKgYl_nnXE0mcpU6EMDayndSsB5O9xyes7bI2WBx3-ibi_Khs"
+  },
+  "frame": {
+    "version": "1",
+    "name": "LYAPUNOV",
+    "subtitle": "A one-way descent",
+    "description": "An immutable, irreversible descent to a fixed point on Solana. Watch V fall and acquire $LPNV.",
+    "iconUrl": "https://lyapunov.xyz/icons/icon-512.png",
+    "homeUrl": "https://lyapunov.xyz/mini",
+    "imageUrl": "https://lyapunov.xyz/icons/fc-card.png",
+    "buttonTitle": "Enter the descent",
+    "splashImageUrl": "https://lyapunov.xyz/icons/icon-512.png",
+    "splashBackgroundColor": "#ffffff",
+    "primaryCategory": "finance",
+    "tags": [
+      "solana",
+      "lyapunov",
+      "descent",
+      "token"
+    ]
+  }
+}

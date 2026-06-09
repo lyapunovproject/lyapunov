@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: lyapunov
+    runtime: node
+    repo: https://github.com/lyapunovproject/lyapunov
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: DESCENT_PROGRAM_ID
+        value: 52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9
+      # Set to the pump.fun mint once $LPNV is launched — this lights up the Buy CTA + CA.
+      - key: LPNV_MINT
+        sync: false
+
+  # Hourly: collect pump.fun creator fees → feed the descent (volume drives the fall).
+  # Set CREATOR_KEYPAIR (the creator wallet's base58 secret) in the Render dashboard — never commit it.
+  - type: cron
+    name: lyapunov-fee-router
+    runtime: node
+    repo: https://github.com/lyapunovproject/lyapunov
+    branch: main
+    plan: starter
+    schedule: "0 * * * *"
+    buildCommand: cd solana/launch && npm install --include=dev
+    startCommand: cd solana/launch && npm run fee-router -- --run
+    autoDeploy: true
+    envVars:
+      - key: CREATOR_KEYPAIR
+        sync: false
+      - key: DESCENT_PROGRAM_ID
+        value: 52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: MIN_FEE_SOL
+        value: "0.01"
+      - key: BOUNTY_WALLET
+        value: EX85S7NkA1eV2nXvwxCd4PPjAjiZpRPRB13zq3YLtVaj
+      - key: BOUNTY_BPS
+        value: "2000"
+
+  # Hourly at :30 (after the fee-router's :00 feed): sweep the descent vault →
+  # recipient, realizing the routed earnings. Set HOST_KEYPAIR in the dashboard.
+  - type: cron
+    name: lyapunov-auto-claim
+    runtime: node
+    repo: https://github.com/lyapunovproject/lyapunov
+    branch: main
+    plan: starter
+    schedule: "30 * * * *"
+    buildCommand: cd solana/launch && npm install --include=dev
+    startCommand: cd solana/launch && npm run claim
+    autoDeploy: true
+    envVars:
+      - key: HOST_KEYPAIR
+        sync: false
+      - key: DESCENT_PROGRAM_ID
+        value: 52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com

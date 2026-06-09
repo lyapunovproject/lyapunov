@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYAPUNOV · $LPNV — the funnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --void:#060a12; --cold:#4f8cff; --cold-b:#7fd3ff;
+    --gold:#ffc24d; --gold-b:#ffe6a8; --hot:#fff7e2;
+    --ink:#cfdbf0; --dim:#62748f; --dimmer:#3c485e; --hair:rgba(127,211,255,0.14);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--void);color:var(--ink);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden;
+    -webkit-font-smoothing:antialiased;cursor:crosshair}
+  #stage{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+  .hud{position:fixed;inset:0;pointer-events:none;z-index:3}
+  .hud>*{opacity:0;animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .brand{position:absolute;top:clamp(18px,3.2vw,40px);left:clamp(18px,3.2vw,44px);animation-delay:.15s}
+  .brand h1{font-family:"Martian Mono",monospace;font-weight:800;font-size:clamp(26px,4.6vw,58px);
+    letter-spacing:.34em;margin:0;line-height:1;color:#eaf1ff;text-shadow:0 0 26px rgba(255,196,82,.22)}
+  .brand .tick{display:flex;gap:.9em;align-items:baseline;margin-top:.95em;
+    font-size:clamp(10px,1.05vw,13px);letter-spacing:.42em;color:var(--gold)}
+  .brand .tick .sub{color:var(--dim);letter-spacing:.3em}
+  .meta{position:absolute;top:clamp(20px,3.4vw,42px);right:clamp(18px,3.2vw,44px);text-align:right;animation-delay:.3s}
+  .chip{display:inline-block;margin-left:.6em;padding:.45em .8em;border:1px solid var(--hair);border-radius:2px;
+    font-size:clamp(9px,.92vw,11px);letter-spacing:.26em;color:var(--cold-b);background:rgba(79,140,255,.05)}
+  .chip.gold{color:var(--gold);border-color:rgba(255,194,77,.22);background:rgba(255,194,77,.05)}
+  .telemetry{position:absolute;left:clamp(18px,3.2vw,44px);top:clamp(120px,17vw,210px);
+    font-size:clamp(10px,1vw,13px);line-height:2.05;animation-delay:.55s;min-width:230px}
+  .telemetry .row{display:grid;grid-template-columns:6.2em 1fr;gap:1em;white-space:nowrap}
+  .telemetry .k{color:var(--dim);letter-spacing:.16em}
+  .telemetry .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  .telemetry .v.stage{color:var(--gold);letter-spacing:.18em}
+  .tagline{position:absolute;left:clamp(18px,3.2vw,44px);bottom:clamp(40px,7vh,72px);
+    max-width:min(48ch,72vw);font-size:clamp(12px,1.35vw,18px);line-height:1.55;color:#aebbd4;animation-delay:.8s}
+  .tagline em{color:var(--gold-b);font-style:normal}
+  .controls{position:absolute;right:clamp(18px,3.2vw,44px);bottom:clamp(40px,7vh,70px);
+    display:flex;flex-direction:column;align-items:flex-end;gap:1.1em;animation-delay:.95s}
+  .replay{pointer-events:auto;cursor:pointer;background:rgba(255,194,77,.06);border:1px solid rgba(255,194,77,.3);
+    color:var(--gold);font-family:inherit;font-size:clamp(10px,1vw,12px);letter-spacing:.28em;padding:.85em 1.3em;
+    border-radius:2px;transition:.25s;text-transform:uppercase}
+  .replay:hover{background:rgba(255,194,77,.14);box-shadow:0 0 24px rgba(255,194,77,.18);color:var(--gold-b)}
+  .dots{display:flex;gap:.6em}
+  .dots b{width:7px;height:7px;border-radius:50%;background:var(--dimmer);transition:.4s;display:block}
+  .dots b.on{background:var(--gold);box-shadow:0 0 10px rgba(255,196,82,.7)}
+  .grain{position:fixed;inset:0;z-index:4;pointer-events:none;mix-blend-mode:overlay;opacity:.5;
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),
+      radial-gradient(120% 90% at 50% 46%,transparent 52%,rgba(0,0,0,.6) 100%)}
+  @media (max-width:680px){.telemetry{display:none}}
+</style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hud">
+    <div class="brand"><h1>LYAPUNOV</h1><div class="tick">$LPNV <span class="sub">THE FOLDING FUNNEL · SOLANA</span></div></div>
+    <div class="meta"><span class="chip">SOLANA</span><span class="chip">IMMUTABLE</span><span class="chip gold">V&nbsp;↓</span></div>
+    <div class="telemetry">
+      <div class="row"><span class="k">V</span><span class="v" id="t-v">1.000</span></div>
+      <div class="row"><span class="k">depth&nbsp;z</span><span class="v" id="t-z">0.000</span></div>
+      <div class="row"><span class="k">‖x−x*‖</span><span class="v" id="t-r">1.000</span></div>
+      <div class="row"><span class="k">stage</span><span class="v stage" id="t-stage">PERTURBATION</span></div>
+    </div>
+    <div class="tagline">Down the funnel, every buy folds it one step closer to native — and <em>native cannot be unfolded.</em></div>
+    <div class="controls"><button class="replay" id="replay">⟲ Observe the descent</button><div class="dots" id="dots"></div></div>
+  </div>
+  <div class="grain"></div>
+<script>
+(() => {
+  const cv=document.getElementById('stage'), c=cv.getContext('2d');
+  const DPR=Math.min(window.devicePixelRatio||1,2);
+  let W,H,CX,CY,S;
+  function resize(){ W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;
+    c.setTransform(DPR,0,0,DPR,0,0); CX=W/2; CY=H*0.40; S=Math.min(W,H)*0.31;
+    c.fillStyle='#060a12'; c.fillRect(0,0,W,H); }
+  addEventListener('resize',resize);
+
+  const TILT=0.92, cosT=Math.cos(TILT), sinT=Math.sin(TILT), D=0.62;
+  const zOf=r=>-D*(1-Math.pow(Math.max(0,Math.min(1,r)),1.35));   // 0 at rim → -D at throat
+  function proj(r,th,z){ const gx=Math.cos(th)*r, gy=Math.sin(th)*r;
+    return [CX+gx*S, CY+gy*S*cosT - z*S*sinT]; }
+
+  const COLD=[79,140,255],GOLD=[255,196,82],HOT=[255,247,226];
+  const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+  const colorFor=r=>{const t=1-Math.max(0,Math.min(1,r));return t<0.6?mix(COLD,GOLD,t/0.6):mix(GOLD,HOT,(t-0.6)/0.4);};
+
+  // descent timeline (shared with the phase-portrait hero)
+  const DURATION=22000;
+  const STAGES=["PERTURBATION","TRANSIENT","CONTRACTION","DISSIPATION","EQUILIBRIUM","ASYMPTOTIC","ATTRACTOR"];
+  const PB=[0.13,0.27,0.42,0.57,0.71,0.85];
+  const Vof=p=>0.06+0.94*Math.exp(-3.25*p);
+  const stageOf=p=>{let s=0;while(s<PB.length&&p>=PB[s])s++;return s;};
+  const dotsEl=document.getElementById('dots'); STAGES.forEach(()=>dotsEl.appendChild(document.createElement('b')));
+  const dotEls=[...dotsEl.children];
+  const el={v:document.getElementById('t-v'),z:document.getElementById('t-z'),r:document.getElementById('t-r'),stage:document.getElementById('t-stage')};
+
+  // particles descending the wall
+  const N=240; let parts=[];
+  const spawn=()=>({r:0.97+Math.random()*0.06, th:Math.random()*7, sp:0.9+Math.random()*0.5, px:0,py:0,fresh:true});
+  const seedAll=()=>{parts=Array.from({length:N},spawn);};
+
+  let t0=performance.now(),last=t0,rot=0,coreE=0;
+  function replay(){t0=performance.now();last=t0;coreE=0;c.fillStyle='#060a12';c.fillRect(0,0,W,H);seedAll();}
+  document.getElementById('replay').addEventListener('click',replay);
+  addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();replay();}});
+
+  function mesh(p){
+    rot+=0.0009;
+    // rings
+    for(let i=0;i<=15;i++){ const r=1-i/15*0.98; const z=zOf(r);
+      const inner=1-r; c.strokeStyle=`rgba(${i<10?'127,211,255':'255,196,82'},${0.05+0.16*inner})`;
+      c.lineWidth=0.8; c.beginPath();
+      for(let a=0;a<=48;a++){ const th=a/48*Math.PI*2; const[x,y]=proj(r,th,z); a?c.lineTo(x,y):c.moveTo(x,y);} c.stroke(); }
+    // spokes
+    for(let s=0;s<32;s++){ const th=rot+s/32*Math.PI*2; c.strokeStyle='rgba(127,211,255,0.05)'; c.lineWidth=0.7;
+      c.beginPath(); for(let i=0;i<=15;i++){ const r=1-i/15*0.98; const[x,y]=proj(r,th,zOf(r)); i?c.lineTo(x,y):c.moveTo(x,y);} c.stroke(); }
+  }
+  function core(p){ const[bx,by]=proj(0,0,zOf(0));
+    const glow=S*(0.10+0.10*p)+Math.min(0.16,0.002*coreE)*S, pulse=1+0.06*Math.sin(performance.now()*0.004);
+    const g=c.createRadialGradient(bx,by,0,bx,by,glow*pulse*2.2);
+    g.addColorStop(0,`rgba(255,247,226,${0.5+0.4*p})`); g.addColorStop(0.3,'rgba(255,196,82,0.45)'); g.addColorStop(1,'rgba(255,196,82,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(bx,by,glow*pulse*2.2,0,7); c.fill();
+    c.fillStyle='rgba(255,247,226,.9)'; c.beginPath(); c.arc(bx,by,2+1.8*p,0,7); c.fill(); }
+
+  function frame(t){
+    const dt=Math.min(0.05,(t-last)/1000); last=t;
+    const p=Math.min(1,(t-t0)/DURATION);
+    c.globalCompositeOperation='source-over'; c.fillStyle='rgba(6,10,18,0.10)'; c.fillRect(0,0,W,H);
+    mesh(p);
+    c.globalCompositeOperation='lighter'; let sumR=0;
+    for(const pt of parts){
+      pt.th+=pt.sp*dt*(0.6+ (1-pt.r)*1.6);           // spin faster near throat
+      pt.r-=dt*pt.sp*0.16*(0.4+pt.r);                 // descend the wall
+      if(pt.r<=0.015){ Object.assign(pt,spawn()); coreE+=1; }
+      const z=zOf(pt.r); const[x,y]=proj(pt.r,pt.th+rot,z);
+      if(pt.fresh){pt.px=x;pt.py=y;pt.fresh=false;}
+      const col=colorFor(pt.r), close=1-pt.r;
+      c.strokeStyle=`rgba(${col[0]|0},${col[1]|0},${col[2]|0},${0.25+0.55*close})`;
+      c.lineWidth=0.8+1.6*close; c.beginPath(); c.moveTo(pt.px,pt.py); c.lineTo(x,y); c.stroke();
+      pt.px=x; pt.py=y; sumR+=pt.r;
+    }
+    coreE*=0.9; core(p);
+    c.globalCompositeOperation='source-over';
+
+    const V=Vof(p), st=stageOf(p);
+    el.v.textContent=V.toFixed(3); el.z.textContent=zOf(1-p).toFixed(3);
+    el.r.textContent=(sumR/parts.length).toFixed(3); el.stage.textContent=STAGES[st]+'  '+st+'/6';
+    dotEls.forEach((d,i)=>d.classList.toggle('on',i<=st));
+    requestAnimationFrame(frame);
+  }
+  resize(); seedAll(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

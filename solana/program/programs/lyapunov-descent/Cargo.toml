@@ -1,0 +1,17 @@
+[package]
+name = "lyapunov-descent"
+version = "0.1.0"
+description = "LYAPUNOV descent — the immutable on-chain record of the fall to equilibrium"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "lyapunov_descent"
+
+[features]
+default = []
+
+# the runtime crate is only needed for the on-chain (SBF) build; gating it to the solana
+# target keeps host `cargo test` (pure-logic tests) free of the runtime crate.
+[target.'cfg(target_os = "solana")'.dependencies]
+pinocchio = "=0.9.3"

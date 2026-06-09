@@ -1,0 +1,33 @@
+# Internal docs — never ship publicly
+BRIEF.md
+NARRATIVE.md
+*.brief.md
+/docs/internal/
+
+# Secrets / keys
+.env
+.env.*
+*.key
+keypair*.json
+deployer*.json
+broadcast/
+
+# State / logs (runtime)
+*-state.json
+*-log.json
+*-queue.json
+comments-log.json
+
+# Build / deps
+node_modules/
+out/
+cache/
+lib/
+artifacts/
+.DS_Store
+
+# Solana (Anchor) build + secrets
+solana/program/target/
+solana/program/.anchor/
+**/test-ledger/
+pump-mint.json

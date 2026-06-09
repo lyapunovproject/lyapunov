@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYAPUNOV — Technical Note</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+<meta property="og:title" content="LYAPUNOV — Immutability as a Theorem" />
+<meta property="og:description" content="An irreversible, one-way descent to a fixed point, encoded immutably on Solana." />
+<meta property="og:image" content="https://lyapunov.xyz/icons/og.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--paper:#fff;--ink:#0a0a0a;--soft:#3a3a3a;--mute:#8a8a8a;--faint:#d8d8d8;--line:#111;--orange:#ff5a00;--m:clamp(20px,4.2vw,64px)}
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;font-size:15px;line-height:1.66;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"Space Mono",monospace}
+
+  /* ── header (matches the site) ── */
+  site-header{padding:var(--m) var(--m) 18px;border-bottom:1px solid var(--line)}
+  .wm{font-weight:700;font-size:clamp(15px,1.5vw,19px);letter-spacing:.16em}
+  .wm b{color:var(--orange)}
+  .rt{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.2em;color:var(--mute)}
+  .rt a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--orange);padding-bottom:2px}
+  .rt a:hover{color:var(--orange)}
+
+  main{max-width:1080px;margin:0 auto;padding:clamp(40px,6vw,72px) var(--m) 60px}
+
+  /* ── lead (full width) ── */
+  h1{font-weight:700;font-size:clamp(28px,5vw,46px);line-height:1.06;letter-spacing:-0.02em}
+  .formal{font-weight:500;color:var(--soft);font-size:clamp(15px,2vw,19px);margin-top:.7em;line-height:1.3;max-width:46ch}
+  .meta{font-family:"Space Mono",monospace;font-size:11.5px;letter-spacing:.12em;color:var(--mute);margin-top:1.6em;padding-bottom:2.4em;margin-bottom:2.4em;border-bottom:1px solid var(--line);text-transform:uppercase}
+  .tldr{margin:2.4em 0 2em;padding:1.2em 1.4em;border-left:3px solid var(--orange);background:#fcfbf9;max-width:80ch}
+  .tldr .k{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.22em;color:var(--orange);text-transform:uppercase;display:block;margin-bottom:.6em}
+  .tldr p{font-size:clamp(16px,2vw,19px);line-height:1.5}
+  .abs{margin:0 0 1em;font-size:14.5px;color:var(--soft);max-width:88ch}
+  .abs .k{font-family:"Space Mono",monospace;font-weight:400;color:var(--ink);font-size:11px;letter-spacing:.16em;text-transform:uppercase;display:block;margin-bottom:.5em}
+
+  /* ── two-column body ── */
+  .cols{column-count:2;column-gap:clamp(32px,4.5vw,64px);margin-top:2.2em}
+  h2{font-weight:600;font-size:clamp(16px,2vw,20px);letter-spacing:-0.01em;margin:1.8em 0 .6em;padding-top:1.2em;border-top:1px solid var(--faint);break-inside:avoid;break-after:avoid}
+  .cols > h2:first-of-type{margin-top:.4em}
+  h2 .n{color:var(--orange);font-family:"Space Mono",monospace;font-size:.72em;margin-right:.7em}
+  p{margin:0 0 1em;break-inside:avoid-page}
+  em{font-style:italic}
+  var{font-style:normal;font-family:"Space Mono",monospace;font-size:.92em}
+  .eq{font-family:"Space Mono",monospace;font-size:13px;text-align:center;margin:1.1em 0;color:var(--ink);letter-spacing:.01em;break-inside:avoid;line-height:1.5}
+  ul{margin:0 0 1em 1.1em;break-inside:avoid} li{margin:.28em 0;font-size:14px}
+  code{font-family:"Space Mono",monospace;font-size:.84em;background:#f4f3f1;padding:.05em .35em;border-radius:2px}
+  .refs{margin-top:.4em;font-family:"Space Mono",monospace;font-size:11.5px;line-height:1.75;color:var(--soft)}
+  .refs div{margin:.5em 0;text-indent:-2em;padding-left:2em;break-inside:avoid}
+
+  .disc{margin-top:2.6em;padding-top:1.4em;border-top:1px solid var(--line);font-family:"Space Mono",monospace;font-size:11px;line-height:1.7;letter-spacing:.03em;color:var(--mute);max-width:90ch}
+
+  /* ── deployment / on-chain artifacts (full width, after refs) ── */
+  .deploy{margin-top:3em;padding-top:1.8em;border-top:1px solid var(--line)}
+  .deyebrow{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.22em;color:var(--orange);text-transform:uppercase;margin-bottom:.7em}
+  .deploy h2{border:0;padding:0;margin:0 0 .5em;font-size:clamp(18px,2.4vw,24px)}
+  .dlede{font-size:14px;color:var(--soft);max-width:80ch;margin-bottom:1.8em}
+  .art{font-family:"Space Mono",monospace;border-top:1px solid var(--faint)}
+  .art > div{display:grid;grid-template-columns:minmax(160px,250px) 1fr;gap:.6em 2.4em;padding:.9em 0;border-bottom:1px solid var(--faint);align-items:baseline}
+  .art dt{font-size:11px;letter-spacing:.1em;color:var(--ink);text-transform:uppercase;line-height:1.5}
+  .art dt .imm{display:block;margin-top:.45em;color:var(--orange);letter-spacing:.08em;font-size:9.5px}
+  .art dd{margin:0;font-size:12.5px;color:var(--soft);word-break:break-all;line-height:1.55}
+  .art dd a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--orange)}
+  .art dd a:hover{color:var(--orange)}
+  @media (max-width:560px){ .art > div{grid-template-columns:1fr;gap:.25em} }
+
+  footer{border-top:1px solid var(--line);padding:28px var(--m) 60px;display:flex;justify-content:space-between;gap:2em;flex-wrap:wrap;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--mute)}
+  footer b{color:var(--ink);font-weight:400}
+  .fbrand{display:inline-flex;align-items:center;gap:.6em}
+  .lm{height:1.5em;width:auto;display:block}
+  @media (max-width:720px){ .cols{column-count:1} }
+</style>
+</head>
+<body>
+<script src="components.js"></script>
+  <site-header></site-header>
+
+  <main>
+    <h1>Immutability as a Theorem</h1>
+    <div class="formal">An irreversible, one-way descent to a fixed point, encoded as an immutable process on Solana.</div>
+    <div class="meta">Technical Note · $LPNV · Solana · 2026</div>
+
+    <div class="abs">
+      <span class="k">Abstract</span>
+      <p>We describe <em>Lyapunov</em>, an autonomous artifact on the Solana network whose internal state evolves as a strictly one-way descent toward a unique fixed point. A single accumulator <var>F</var> — the cumulative value forced into the system — is non-decreasing by construction; from it we derive a Lyapunov function <var>V</var> that is correspondingly non-increasing. As <var>V</var> crosses a fixed, ascending sequence of thresholds, the system commits, irreversibly, through seven discrete states, terminating in an absorbing attractor it cannot depart. The governing contract is deployed without owner, mint authority, proxy, or upgrade path; consequently the irreversibility of the descent is not a behavioural promise but a structural property of the deployment — a theorem rather than a guarantee. We give the construction, a stability argument, the forcing mechanism by which market activity drives the descent, and the immutability claim.</p>
+    </div>
+
+    <div class="cols">
+      <h2><span class="n">1</span>Introduction</h2>
+      <p>A deployed smart contract without an upgrade path is a rare object: a process whose future behaviour is fixed at the moment of its creation. Most tokens leave their interesting state off-chain — in sentiment, in the order book, in the discretion of a team. <em>Lyapunov</em> instead places a single, legible, irreversible quantity <em>on</em>-chain and lets market activity move it in one direction only.</p>
+      <p>The design borrows its vocabulary from the theory of dynamical systems. A system displaced far from equilibrium relaxes, under a dissipative law, toward a stable resting state; a scalar <em>Lyapunov function</em> certifies that relaxation by decreasing along every trajectory, never once rising, until the system arrives at a fixed point from which it cannot be perturbed. We encode exactly this object, with one departure from the usual practice: the certificate is not <em>verified</em> after the fact but <em>enforced</em> by the contract, because no operation able to violate it was ever written.</p>
+
+      <h2><span class="n">2</span>The system</h2>
+      <p>Let <var>F</var>(<var>t</var>) ∈ ℝ<sub>≥0</sub> denote the <em>cumulative forcing</em> — the total native value fed into the descent program up to time <var>t</var>. By construction <var>F</var> is non-decreasing,</p>
+      <div class="eq">F(t₂) ≥ F(t₁)&nbsp;&nbsp;for all&nbsp;&nbsp;t₂ ≥ t₁,</div>
+      <p>and the contract exposes no operation that decrements it. Fix an ascending sequence of thresholds 0 &lt; θ₁ &lt; ⋯ &lt; θ₆, immutable from deployment. Define the discrete <em>stage</em></p>
+      <div class="eq">σ(F) = #{ i : F ≥ θᵢ } ∈ {0,…,6},</div>
+      <p>the number of thresholds crossed, and the <em>Lyapunov function</em></p>
+      <div class="eq">V(F) = θ₆ / (θ₆ + F) ∈ (0, 1],&nbsp;&nbsp;V(0) = 1.</div>
+      <p>Both are determined entirely by <var>F</var>. <var>σ</var> is integer-valued, non-decreasing, and right-continuous; <var>V</var> is smooth and strictly decreasing, with <var>V</var> → 0 as <var>F</var> → ∞. The program publishes <code>fed</code>=<var>F</var>, <code>stage</code>=<var>σ</var>, and <code>V</code> directly.</p>
+
+      <h2><span class="n">3</span>Dynamics and stability</h2>
+      <p>Because <var>F</var> is non-decreasing in time and <var>V</var> is a strictly decreasing function of <var>F</var>, the composition is non-increasing along every trajectory:</p>
+      <div class="eq">dV/dt = V′(F)·dF/dt ≤ 0,&nbsp; since V′ &lt; 0, dF/dt ≥ 0.</div>
+      <p>This is the defining property of a Lyapunov function. <var>V</var> is bounded below by 0 and never rises, so it converges to an infimum <var>V</var><sub>∞</sub> ≥ 0, approached but never undershot. The stage <var>σ</var>, being integer-valued, non-decreasing, and bounded above by 6, attains its terminal value the instant <var>F</var> ≥ θ₆ and remains there for all subsequent time.</p>
+      <p>The terminal stage is therefore <em>absorbing</em>: a state which, once entered, is never left — the discrete counterpart of <em>asymptotic stability</em>, where every admissible continuation remains in the terminal set and any notional perturbation decays, because the only dynamics available carry the system further down, never back up. We name the seven states for the phases of such a relaxation:</p>
+      <ul>
+        <li><span class="mono">σ=0</span> <strong>Perturbation</strong> — displaced far from equilibrium; every state still admissible.</li>
+        <li><span class="mono">σ=1</span> <strong>Transient</strong> — the first damping; the descent is shown not to reverse.</li>
+        <li><span class="mono">σ=2</span> <strong>Contraction</strong> — trajectories drawn together toward one fixed point.</li>
+        <li><span class="mono">σ=3</span> <strong>Dissipation</strong> — energy leaves and does not return; one direction remains.</li>
+        <li><span class="mono">σ=4</span> <strong>Equilibrium</strong> — the flow vanishes; <var>V</var> rests near its minimum.</li>
+        <li><span class="mono">σ=5</span> <strong>Asymptotic</strong> — stability is structural; deviations decay.</li>
+        <li><span class="mono">σ=6</span> <strong>Attractor</strong> — absorbing and terminal; the basin only widens.</li>
+      </ul>
+
+      <h2><span class="n">4</span>Forcing</h2>
+      <p>The descent is driven by market activity, not by any operator's discretion. The $LPNV token is launched on <em>pump.fun</em>, a bonding-curve venue on Solana; trading accrues creator fees to the launching account. A read-only routing process periodically claims those fees and forces them into the descent program through its single payable entry point, incrementing <var>F</var>. The chain of causation is</p>
+      <div class="eq">volume ⟶ cumulative fees ⟶ F ⟶ (σ, V).</div>
+      <p>Each threshold crossing emits a permanent on-chain event — a <em>transformation ledger</em> readable by any observer. The routing key has exactly one power over the state machine: to increase <var>F</var>. It cannot decrease <var>F</var>, lower <var>σ</var>, or raise <var>V</var>. Value forced into the program is recoverable to a single fixed recipient and may be re-forced — a permissible recycling that advances <var>σ</var> without net expenditure — but no path recovers a <em>stage</em>.</p>
+
+      <h2><span class="n">5</span>Immutability as a theorem</h2>
+      <p>The descent program is deployed immutable: no owner, no mint function, no proxy, no upgrade path. The single privileged action is withdrawal of accumulated value to a recipient fixed at construction — an operation that touches neither <var>σ</var> nor <var>V</var>, both determined by <var>F</var> alone, which only rises.</p>
+      <p>It follows that the irreversibility of the descent is not contingent on the honesty, solvency, or continued attention of any party. It is a consequence of the <em>absence</em> of any code path that could decrement <var>F</var>, lower <var>σ</var>, or replace the program. We state the principle plainly:</p>
+      <div class="eq">Immutability is not a promise. It is a theorem —</div>
+      <p>the conclusion of the deployment, not a commitment about future conduct. What deploys is the final artifact; there is no second version.</p>
+
+      <h2><span class="n">6</span>Token and observer</h2>
+      <p>$LPNV is a fixed-supply SPL token minted on pump.fun on Solana, paired in its bonding-curve pool. A read-only <em>observer</em> reads <var>σ</var>, <var>F</var>, and <var>V</var> from the chain and renders the descent in real time, in the third person of an instrument reporting its own measurements. The observer holds no keys and can take no on-chain action; the design thereby forecloses the custody and autonomous-agent failure modes that attend key-holding bots.</p>
+      <p>The proposition is conceptual rather than mechanical: an immutable, irreversible, publicly legible process, which participants advance simply by trading, and whose meaning is its permanence. There is no roadmap, because there is nothing left to decide.</p>
+
+      <h2><span class="n">7</span>Conclusion</h2>
+      <p>We have encoded a one-way Lyapunov descent — a single non-decreasing accumulator, a non-increasing certificate, a fixed threshold ladder, and an absorbing terminal stage — as an ownerless, unupgradeable program on Solana, and shown that the irreversibility of its evolution follows from the construction itself rather than from any promise. Market activity supplies the forcing; the mathematics supplies the direction; the deployment supplies the permanence. Every state but one is closing.</p>
+
+      <h2><span class="n">R</span>References</h2>
+      <div class="refs">
+        <div>[1]&nbsp;&nbsp;A. M. Lyapunov. <em>The General Problem of the Stability of Motion.</em> Kharkov, 1892. (Eng. transl., Taylor &amp; Francis, 1992.)</div>
+        <div>[2]&nbsp;&nbsp;J. P. LaSalle. "Some extensions of Liapunov's second method." <em>IRE Trans. Circuit Theory</em>, 7(4):520–527, 1960.</div>
+        <div>[3]&nbsp;&nbsp;H. K. Khalil. <em>Nonlinear Systems.</em> 3rd ed., Prentice Hall, 2002.</div>
+        <div>[4]&nbsp;&nbsp;S. H. Strogatz. <em>Nonlinear Dynamics and Chaos.</em> Westview Press, 1994.</div>
+        <div>[5]&nbsp;&nbsp;C. B. Anfinsen. "Principles that govern the folding of protein chains." <em>Science</em>, 181(4096):223–230, 1973.</div>
+      </div>
+    </div>
+
+    <section class="deploy" id="deploy">
+      <div class="deyebrow">On-chain · Solana mainnet-beta</div>
+      <h2>Deployment &amp; verification</h2>
+      <p class="dlede">The descent program is live and deployed <code>--final</code>: no upgrade authority, no proxy, no owner. The immutability argued in §5 is therefore not a claim to be trusted but a property to be checked — each address below resolves to a public account whose authority fields anyone can read.</p>
+      <dl class="art">
+        <div>
+          <dt>Descent program<span class="imm">immutable · upgrade authority none</span></dt>
+          <dd><a href="https://solscan.io/account/52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9" target="_blank" rel="noopener">52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9</a></dd>
+        </div>
+        <div>
+          <dt>State account<span class="imm">PDA · seed "descent" · holds σ, F, V, θ</span></dt>
+          <dd><a href="https://solscan.io/account/AMvC9skaB4GCYiT3wtwT1MZWc9Rbk9fxF5xM2vrpfTsN" target="_blank" rel="noopener">AMvC9skaB4GCYiT3wtwT1MZWc9Rbk9fxF5xM2vrpfTsN</a></dd>
+        </div>
+        <div>
+          <dt>$LPNV mint<span class="imm">pump.fun · Token-2022 · mint + freeze revoked</span></dt>
+          <dd><a href="https://solscan.io/token/pvysiEDLr6E9SsS4gETrDCikMdekAPBtYxK7AnZpump" target="_blank" rel="noopener">pvysiEDLr6E9SsS4gETrDCikMdekAPBtYxK7AnZpump</a></dd>
+        </div>
+        <div>
+          <dt>Thresholds θ₁…θ₆<span class="imm">SOL · fixed at genesis, strictly ascending</span></dt>
+          <dd>0.05 · 0.15 · 0.3 · 0.6 · 1.2 · 2.5</dd>
+        </div>
+      </dl>
+    </section>
+
+  </main>
+
+  <site-footer></site-footer>
+</body>
+</html>

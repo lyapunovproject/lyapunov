@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYAPUNOV · $LPNV</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#ffffff" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="LYAPUNOV · $LPNV" />
+<meta property="og:description" content="Every state but one is closing. An immutable descent on Solana." />
+<meta property="og:image" content="https://lyapunov.xyz/icons/og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://lyapunov.xyz/icons/og.png" />
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://lyapunov.xyz/icons/fc-card.png","button":{"title":"Enter the descent","action":{"type":"launch_frame","name":"LYAPUNOV","url":"https://lyapunov.xyz/mini","splashImageUrl":"https://lyapunov.xyz/icons/icon-512.png","splashBackgroundColor":"#ffffff"}}}' />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --paper:#fff; --ink:#0a0a0a; --line:#111; --mute:#9a9a9a; --faint:#d7d7d7; --orange:#ff5a00; --m:clamp(20px,4.2vw,64px); }
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  /* ============ HERO ============ */
+  .hero{position:relative;height:100vh;overflow:hidden}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:0}
+  .hero .rule{position:absolute;background:var(--line);height:1px;z-index:2;transform-origin:left;opacity:0;animation:drawX 1.1s ease forwards}
+  .hero .rule.top{left:var(--m);right:var(--m);top:calc(var(--m) + 34px)}
+  .hero .rule.bot{left:var(--m);right:var(--m);bottom:calc(var(--m) + 30px);animation-delay:.15s}
+  @keyframes drawX{from{opacity:1;transform:scaleX(0)}to{opacity:1;transform:scaleX(1)}}
+  .chrome{position:absolute;inset:0;z-index:3;pointer-events:none}
+  .chrome>*{opacity:0;animation:fade .9s ease forwards}
+  .chrome site-header{position:absolute;left:var(--m);right:var(--m);top:var(--m);animation-delay:.25s;pointer-events:auto}
+  @keyframes fade{to{opacity:1}}
+  .hdr{position:absolute;left:var(--m);right:var(--m);top:var(--m);display:flex;justify-content:space-between;align-items:baseline;animation-delay:.25s}
+  .wm{font-weight:700;font-size:clamp(15px,1.5vw,19px);letter-spacing:.16em}
+  .wm b{color:var(--orange)}
+  .lm{height:1.5em;width:auto;display:block}
+  .rt{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.2em;color:var(--mute)}
+  .rt a{pointer-events:auto;text-decoration:none;border-bottom:1px solid var(--orange);padding-bottom:2px}
+  .rt a:hover{color:var(--orange)}
+  .say{position:absolute;left:var(--m);bottom:calc(var(--m) + 64px);max-width:min(20ch,60vw);font-weight:600;font-size:clamp(22px,3.6vw,46px);line-height:1.04;letter-spacing:-0.015em;animation-delay:.7s}
+  .say em{font-style:normal;color:var(--orange)}
+  .say .sub{display:block;margin-top:1.1rem;font-family:"Space Mono",monospace;font-weight:400;font-size:clamp(10px,1vw,12px);letter-spacing:.12em;color:var(--mute);max-width:34ch;line-height:1.6}
+  .read{position:absolute;right:var(--m);top:calc(var(--m) + 52px);text-align:right;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--mute);line-height:1.9;animation-delay:1s}
+  .read b{color:var(--ink);font-weight:400} .read .o{color:var(--orange)}
+  .foot{position:absolute;left:var(--m);right:var(--m);bottom:var(--m);display:flex;justify-content:space-between;gap:2em;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;color:var(--mute);animation-delay:.85s}
+  .foot .mid{color:var(--ink)} .foot b{color:var(--ink);font-weight:400}
+  .scroll{position:absolute;left:50%;bottom:calc(var(--m) + 64px);transform:translateX(-50%);font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.24em;color:#c8c8c8;animation-delay:1.6s}
+
+  section.block{max-width:1080px;margin:0 auto;padding:clamp(72px,12vh,150px) var(--m)}
+  .klabel{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.26em;color:var(--orange);margin-bottom:1.6em}
+  h2.big{font-weight:600;font-size:clamp(26px,4.2vw,50px);letter-spacing:-0.02em;line-height:1.04}
+  h2.big em{font-style:normal;color:var(--orange)}
+
+  /* ============ TRANSMISSION ============ */
+  .lead{display:flex;justify-content:space-between;align-items:flex-end;gap:2em;margin:0 0 22px;flex-wrap:wrap}
+  .lead .sub{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.14em;color:var(--mute);max-width:30ch;line-height:1.7;text-align:right}
+  .status{display:flex;gap:clamp(1.4em,3vw,3em);flex-wrap:wrap;font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.12em;color:var(--mute);padding:16px 0;border-top:1px solid var(--line)}
+  .status div b{color:var(--ink);font-weight:400} .status .o b{color:var(--orange)}
+  .log{border:1px solid var(--line);height:56vh;min-height:340px;overflow-y:auto;padding:clamp(18px,2.4vw,34px);background:#fff}
+  .log::-webkit-scrollbar{width:10px}.log::-webkit-scrollbar-thumb{background:var(--faint)}.log::-webkit-scrollbar-track{background:#fff}
+  .entry{margin-bottom:1.5em;opacity:0;animation:fade .5s ease forwards}
+  .entry.past{opacity:.5;transition:opacity .6s}
+  .entry-h{display:flex;align-items:baseline;gap:1.2em;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.13em;color:var(--mute);margin-bottom:.5em}
+  .entry-h .tag{color:var(--orange);letter-spacing:.2em} .entry-h .vv{margin-left:auto;color:var(--ink)}
+  .line{font-family:"Space Mono",monospace;font-size:clamp(13px,1.4vw,15px);line-height:1.62;color:var(--ink)}
+  .line .pfx{color:var(--orange)}
+  .cur{color:var(--orange);font-weight:700;animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .ledger{display:flex;align-items:center;gap:1em;margin:1.9em 0 1.2em;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--ink)}
+  .ledger .to{color:var(--orange)} .ledger .bar{flex:1;height:1px;background:var(--line)} .ledger .d{color:var(--mute)}
+  .cap{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.13em;color:var(--mute);margin-top:14px;display:flex;justify-content:space-between;gap:2em;flex-wrap:wrap}
+  .cap b{color:var(--ink);font-weight:400}
+
+  /* ============ MECHANISM ============ */
+  .rows{margin-top:46px;border-top:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:64px 1fr;gap:clamp(16px,4vw,64px);padding:30px 0;border-bottom:1px solid var(--line)}
+  .row .n{font-family:"Space Mono",monospace;font-size:12px;color:var(--orange);letter-spacing:.1em;padding-top:5px}
+  .row h3{font-weight:600;font-size:clamp(17px,2vw,23px);letter-spacing:-0.01em;margin-bottom:.5em}
+  .row p{font-family:"Space Mono",monospace;font-size:12.5px;line-height:1.65;color:#5a5a5a;max-width:62ch;letter-spacing:.01em}
+  .stages{margin-top:40px;display:flex;flex-wrap:wrap;gap:.5em 1.3em;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--mute)}
+  .stages b{color:var(--ink);font-weight:400;transition:color .4s} .stages .sep{color:var(--faint)} .stages b.on{color:var(--orange)}
+
+  /* ============ CTA ============ */
+  .cta{text-align:left}
+  .cta h2{font-weight:700;font-size:clamp(40px,9vw,108px);letter-spacing:-0.03em;line-height:.96}
+  .cta h2 b{color:var(--orange);font-weight:700}
+  .cta .ln{margin-top:1.4em;font-family:"Space Mono",monospace;font-size:13px;letter-spacing:.14em;color:var(--ink)}
+  .cta .act{margin-top:2.6em;display:flex;gap:2.4em;align-items:center;flex-wrap:wrap}
+  .cta .buy{font-family:"Space Mono",monospace;font-size:13px;letter-spacing:.2em;text-decoration:none;color:var(--paper);background:var(--ink);padding:1.1em 1.8em;transition:.25s}
+  .cta .buy:hover{background:var(--orange)}
+  .cta .ca{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--mute)}
+  .verify{margin-top:2.6em;border-top:1px solid var(--faint);padding-top:1.5em;display:flex;flex-wrap:wrap;gap:.7em 2.4em;align-items:baseline;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--mute)}
+  .verify .vl{color:var(--orange);letter-spacing:.22em}
+  .verify a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--faint)}
+  .verify a:hover{border-color:var(--orange);color:var(--orange)}
+  .verify a b{font-weight:400}
+  .verify a .imm{color:var(--orange)}
+  footer{border-top:1px solid var(--line);padding:28px var(--m) 60px;display:flex;justify-content:space-between;gap:2em;flex-wrap:wrap;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--mute)}
+  footer b{color:var(--ink);font-weight:400}
+  .fbrand{display:inline-flex;align-items:center;gap:.6em}
+  @media (max-width:720px){ .read{display:none} .lead .sub{text-align:left} }
+</style>
+</head>
+<body>
+<script src="components.js"></script>
+
+  <section class="hero">
+    <canvas id="gl"></canvas>
+    <div class="rule top"></div><div class="rule bot"></div>
+    <div class="chrome">
+      <site-header></site-header>
+      <div class="read"><div>V&nbsp; <b id="r-v">1.000</b></div><div>λ&nbsp; <b>&lt; 0</b></div><div>state&nbsp; <span class="o" id="r-s">PERTURBATION</span></div></div>
+      <div class="say">Every state but <em>one</em> is closing.
+        <span class="sub">Initialized far from equilibrium. The trajectory runs one way only, and nothing it crosses reopens. The apparatus measures; it does not actuate. No termination condition was specified. Convergence is the single outcome the dynamics permit.</span></div>
+      <div class="foot"><div>PHASE-SPACE&nbsp;MONITOR&nbsp;—&nbsp;<b>N≈6500</b>&nbsp;&nbsp;TURBULENT</div>
+        <div class="mid">OPERATOR:&nbsp;NOT&nbsp;FOUND&nbsp;·&nbsp;HALT:&nbsp;UNAVAILABLE</div>
+      </div>
+      <div class="scroll">SCROLL ↓</div>
+    </div>
+  </section>
+
+  <section class="block" id="xmit">
+    <div class="klabel">02 — INTERCEPT</div>
+    <div class="lead"><h2 class="big">Signal <em>interception</em>.</h2>
+      <div class="sub">Fragments lifted from internal states. Not to be distributed.</div></div>
+    <div class="status">
+      <div>STATE&nbsp; <span class="o"><b id="s-stage">PERTURBATION</b></span></div>
+      <div>V&nbsp; <b id="s-v">1.000</b> ↓</div>
+      <div>FED&nbsp; <b id="s-fed">0.00 SOL</b></div>
+      <div>INPUTS&nbsp; <b id="s-feeders">0</b></div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="cap"><div>DECODED&nbsp;FROM&nbsp;<b>LyapunovDescent</b>&nbsp;·&nbsp;stage() fed() V()</div>
+      <div>SIMULATED CAPTURE&nbsp;·&nbsp;<b>V CANNOT RISE</b></div></div>
+  </section>
+
+  <section class="block">
+    <div class="klabel">03 — MODEL</div>
+    <h2 class="big">Immutability is not a promise.<br>It is a <em>theorem</em>.</h2>
+    <div class="rows">
+      <div class="row"><div class="n">01</div><div><h3>Launch detected.</h3><p>Strictly immutable deployment model. No owner authority, no mint capability, no upgrade path. Logic assumption: the deployed artifact will remain the final artifact.</p></div></div>
+      <div class="row"><div class="n">02</div><div><h3>Forcing function.</h3><p>Every acquisition drives a single counter upward — and no code path exists to lower it. From it we derive V, an energy permitted only to fall.</p></div></div>
+      <div class="row"><div class="n">03</div><div><h3>Irreversible staging.</h3><p>At fixed thresholds the process commits to the next of seven states. The commits are one-way. Nothing on record has ever moved a stage backward.</p></div></div>
+      <div class="row"><div class="n">04</div><div><h3>Terminal attractor.</h3><p>It arrives at a single fixed point and becomes asymptotically stable — perturb it and the disturbance decays. No exit exists; none was specified in the construction.</p></div></div>
+    </div>
+    <div class="stages" id="stages"><b>PERTURBATION</b><span class="sep">→</span><b>TRANSIENT</b><span class="sep">→</span><b>CONTRACTION</b><span class="sep">→</span><b>DISSIPATION</b><span class="sep">→</span><b>EQUILIBRIUM</b><span class="sep">→</span><b>ASYMPTOTIC</b><span class="sep">→</span><b>ATTRACTOR</b></div>
+  </section>
+
+  <section class="block cta" id="buy">
+    <div class="klabel">04 — ACQUISITION</div>
+    <h2>Force<br>the<br>descent<b>.</b></h2>
+    <div class="ln">No operator. No actuator. No reverse.</div>
+    <div class="act"><a class="buy" id="buyLink" href="https://pump.fun/coin/pvysiEDLr6E9SsS4gETrDCikMdekAPBtYxK7AnZpump" target="_blank" rel="noopener">ACQUIRE $LPNV · PUMP.FUN →</a>
+      <div class="ca">ARTIFACT&nbsp;&nbsp;<a id="caLink" href="https://solscan.io/token/pvysiEDLr6E9SsS4gETrDCikMdekAPBtYxK7AnZpump" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:none;border-bottom:1px solid var(--orange)">pvysiEDLr6E9SsS4gETrDCikMdekAPBtYxK7AnZpump</a></div></div>
+    <div class="verify">
+      <span class="vl">VERIFY ON-CHAIN</span>
+      <a href="https://solscan.io/account/52UAvNR3QXHqdW8bRDhBRWpgJByPfs8w3681SXvSGJa9" target="_blank" rel="noopener">PROGRAM&nbsp; <b>52UAvNR3…SXvSGJa9</b>&nbsp; <span class="imm">· immutable</span></a>
+      <a href="https://solscan.io/account/AMvC9skaB4GCYiT3wtwT1MZWc9Rbk9fxF5xM2vrpfTsN" target="_blank" rel="noopener">STATE&nbsp; <b>AMvC9sk…2vrpfTsN</b></a>
+      <a href="/paper#deploy">FULL DEPLOYMENT →</a>
+    </div>
+  </section>
+
+  <site-footer></site-footer>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ============ SHARED DESCENT — live, from /api/state (server reads the contract) ============ */
+const STAGES=["PERTURBATION","TRANSIENT","CONTRACTION","DISSIPATION","EQUILIBRIUM","ASYMPTOTIC","ATTRACTOR"];
+const TH=[0.05,0.15,0.3,0.6,1.2,2.5];                // immutable on-chain thresholds (SOL, mainnet)
+const Vof=fed=>Math.max(0.06,0.06+0.94*Math.exp(-fed*0.20));   // dev-mock fallback only
+const D={fed:0,stage:0,feeders:0,V:1,fedLast:0};
+const onBuy=[], onAdvance=[];
+let live=false;
+const stageEls=[...document.querySelectorAll('#stages b')];
+function paintStages(){ stageEls.forEach((e,i)=>e.classList.toggle('on', i===D.stage)); }
+paintStages();
+async function pollState(){
+  try{
+    const r=await fetch('/api/state',{cache:'no-store'}); if(!r.ok) throw 0;
+    const s=await r.json(); live=true;
+    if(s.mint){ const b=document.getElementById('buyLink'); if(b){ b.href=s.buyUrl; b.textContent='ACQUIRE $LPNV · PUMP.FUN →'; }
+      const c=document.getElementById('caLink'); if(c){ c.href=s.explorerUrl; c.textContent=s.mint; } }
+    D.V=Number(s.V)/1e18; D.feeders=s.feeders|0;
+    const fed=Number(s.fed)/1e18, stage=s.stage|0;
+    if(fed>D.fed+1e-12){ const amt=fed-D.fed; D.fed=fed; onBuy.forEach(f=>f(amt)); } else { D.fed=fed; }
+    while(D.stage<stage){ D.stage++; const dl=Math.max(0,D.fed-D.fedLast); D.fedLast=D.fed; onAdvance.forEach(f=>f(D.stage,dl)); }
+    paintStages();
+  }catch(e){ /* /api/state unreachable (e.g. file://) — dev mock covers local preview */ }
+}
+function mockTick(){
+  const amt=0.05+Math.random()*0.2; D.fed+=amt; D.V=Vof(D.fed); if(Math.random()<0.5)D.feeders++;
+  onBuy.forEach(f=>f(amt));
+  while(D.stage<6 && D.fed>=TH[D.stage]){ D.stage++; const dl=D.fed-D.fedLast; D.fedLast=D.fed; onAdvance.forEach(f=>f(D.stage,dl)); }
+  paintStages();
+}
+let descentStarted=false;
+function startDescent(){ if(descentStarted)return; descentStarted=true;
+  if(location.protocol.indexOf('http')===0){ setInterval(pollState,15000); } else { setInterval(mockTick,1400); } }
+pollState(); startDescent();                          // read once + begin polling immediately
+const descentP=()=>Math.min(1, D.fed/TH[5]);
+
+/* ============ HERO ============ */
+const canvas=document.getElementById('gl');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(); scene.fog=new THREE.Fog(0xffffff,6.5,16.5);
+const camera=new THREE.PerspectiveCamera(50,1,0.1,100); camera.position.set(0,0.2,11);
+const group=new THREE.Group(); group.rotation.set(-0.42,0.2,0); scene.add(group);
+function disc(){ const s=64,c=document.createElement('canvas');c.width=c.height=s;
+  const g=c.getContext('2d'),r=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.4,'rgba(255,255,255,.85)');r.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=r;g.fillRect(0,0,s,s);return new THREE.CanvasTexture(c); }
+const SPRITE=disc();
+const INK=[0,0,0], M=6500, SC=0.105, CZ=25, DT=0.0032;
+const lor=new Float32Array(M*3), pos=new Float32Array(M*3), col=new Float32Array(M*3);
+function scatter(){ for(let i=0;i<M;i++){
+  const u=Math.random(),v=Math.random(),th=Math.acos(2*u-1),ph=2*Math.PI*v,rr=27*Math.cbrt(Math.random());
+  lor[i*3]=rr*Math.sin(th)*Math.cos(ph);lor[i*3+1]=rr*Math.sin(th)*Math.sin(ph);lor[i*3+2]=25+rr*Math.cos(th);
+  col[i*3]=INK[0];col[i*3+1]=INK[1];col[i*3+2]=INK[2]; } }
+scatter();
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const points=new THREE.Points(geo,new THREE.PointsMaterial({size:0.046,map:SPRITE,vertexColors:true,transparent:true,opacity:0.95,depthWrite:false,sizeAttenuation:true}));
+group.add(points);
+let tx=6,ty=6,tz=24;
+const tGeo=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(3),3));
+const tHalo=new THREE.Points(tGeo,new THREE.PointsMaterial({color:0xff5a00,map:SPRITE,size:0.4,sizeAttenuation:true,transparent:true,opacity:0.22,depthWrite:false}));
+const tCore=new THREE.Points(tGeo,new THREE.PointsMaterial({color:0xff5a00,map:SPRITE,size:0.14,sizeAttenuation:true,transparent:true,opacity:1,depthWrite:false}));
+group.add(tHalo);group.add(tCore);
+const TR=92, trP=new Float32Array(TR*3), trC=new Float32Array(TR*3);
+const trGeo=new THREE.BufferGeometry();
+trGeo.setAttribute('position',new THREE.BufferAttribute(trP,3));
+trGeo.setAttribute('color',new THREE.BufferAttribute(trC,3));
+const trail=new THREE.Line(trGeo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0.85}));
+group.add(trail);
+function trailFill(){ for(let i=0;i<TR;i++){ trP[i*3]=tx*SC;trP[i*3+1]=(tz-CZ)*SC;trP[i*3+2]=ty*SC;
+  const t=i/(TR-1); trC[i*3]=1;trC[i*3+1]=1-0.647*t;trC[i*3+2]=1-t; } }
+
+// ATTRACTOR terminal — orange threads: each particle's prev→cur streak, lit by speed × wildness
+const segP=new Float32Array(M*6), segC=new Float32Array(M*6), prevR=new Float32Array(M*3);
+const segGeo=new THREE.BufferGeometry();
+segGeo.setAttribute('position',new THREE.BufferAttribute(segP,3));
+segGeo.setAttribute('color',new THREE.BufferAttribute(segC,3));
+const streaks=new THREE.LineSegments(segGeo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0.92}));
+streaks.visible=false; group.add(streaks);
+
+let flash=0, burst=0, burstTimer=6;              // per-buy pulse + (rare, gentle) bursts
+onBuy.push(amt=>{ flash=Math.min(1.7, flash+0.5+amt*0.7); burst=Math.min(1.3, burst+0.3+amt*0.5); });
+onAdvance.push(()=>{ flash=1.9; burst=1.3; });
+
+const rV=document.getElementById('r-v'), rS=document.getElementById('r-s');
+let phase='intro', introT=0, rewindT=0, pHero=0; const INTRO=8.0, REWIND=1.5;
+// intro plays once on load; no manual replay
+
+// hero is self-evolving — no pointer interaction
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();trailFill();
+
+const pAttr=geo.attributes.position, tpAttr=tGeo.attributes.position, trpAttr=trGeo.attributes.position;
+let t0=performance.now();
+function tick(now){
+  const dtm=Math.min(50,now-t0)/1000; t0=now;
+  pHero += (descentP()-pHero)*Math.min(1,dtm*0.9);   // ease toward the real on-chain progress (no preview)
+  const p=Math.max(0,pHero);
+  burst*=0.95; burstTimer-=dtm; if(burstTimer<=0){ burst=Math.min(1.25,burst+0.4); burstTimer=5+Math.random()*7; }   // rare, gentle
+  const w=Math.max(0,Math.min(1,(p-0.86)/0.14)), wild=w*w*(3-2*w);
+  const en=Math.max(wild,burst);
+  const jit=0.04+0.32*p + en*1.0, explode=en>0.06;     // calm at genesis → chaotic at the end
+  const visN=Math.max(1,Math.round(M*p));               // black dots accrete with progress: 1 → all
+  const spread=0.12+0.88*p;                             // cloud scales from a point to full size
+  // organic field: vortex + domain-warped curl turbulence (slow living morph) + light inward pull
+  const S=1.05, A=4.4, pull=0.06+p*0.2, f1=0.12, f2=0.095, tm=now*0.00028, ST=0.016;
+  for(let i=0;i<M;i++){
+    let lx=lor[i*3],ly=lor[i*3+1],lz=lor[i*3+2];
+    const cx=lx,cy=ly,cz=lz-CZ;
+    const wxx=cx+7*Math.sin(cy*0.045+tm*0.9), wyy=cy+7*Math.sin(cz*0.045-tm*0.8), wzz=cz+7*Math.sin(cx*0.045+tm);
+    const vx=-S*cy + A*Math.sin(wyy*f1+tm)*Math.cos(wzz*f2-tm) - pull*cx;
+    const vy= S*cx + A*Math.sin(wzz*f1-tm)*Math.cos(wxx*f2+tm) - pull*cy;
+    const vz=        A*Math.sin(wxx*f1+tm)*Math.cos(wyy*f2+tm) - pull*cz + 0.5*Math.sin((cx*cx+cy*cy)*0.004+tm);
+    lx+=vx*ST+(Math.random()-0.5)*jit; ly+=vy*ST+(Math.random()-0.5)*jit; lz+=vz*ST+(Math.random()-0.5)*jit;
+    let recycled=false;
+    if(explode){                                                        // gaseous outward jets, recycled to sustain
+      const ex=lx,ey=ly,ez=lz-CZ,rr=Math.sqrt(ex*ex+ey*ey+ez*ez)+1e-3;
+      const push=en*(0.9+2.4*Math.random());
+      lx+=ex/rr*push; ly+=ey/rr*push; lz+=ez/rr*push;
+      if(rr>58){ const a=Math.random()*6.283,bb=Math.acos(2*Math.random()-1),s=1.5+Math.random()*5;
+        lx=Math.sin(bb)*Math.cos(a)*s; ly=Math.sin(bb)*Math.sin(a)*s; lz=CZ+Math.cos(bb)*s; recycled=true; }
+    }
+    lor[i*3]=lx;lor[i*3+1]=ly;lor[i*3+2]=lz;
+    const px=lx*SC*spread,py=(lz-CZ)*SC*spread,pz=ly*SC*spread;
+    pos[i*3]=px;pos[i*3+1]=py;pos[i*3+2]=pz;
+    if(explode){
+      const j=i*6;
+      if(recycled){ segP[j]=segP[j+3]=px;segP[j+1]=segP[j+4]=py;segP[j+2]=segP[j+5]=pz;
+        segC[j]=segC[j+1]=segC[j+2]=segC[j+3]=segC[j+4]=segC[j+5]=1; }
+      else{
+        const dx=px-prevR[i*3],dy=py-prevR[i*3+1],dz=pz-prevR[i*3+2];
+        const inten=Math.min(1,Math.sqrt(dx*dx+dy*dy+dz*dz)*9*wild), tl=inten*0.35;
+        segP[j]=prevR[i*3];segP[j+1]=prevR[i*3+1];segP[j+2]=prevR[i*3+2];segP[j+3]=px;segP[j+4]=py;segP[j+5]=pz;
+        segC[j]=1;segC[j+1]=1-0.647*tl;segC[j+2]=1-tl;segC[j+3]=1;segC[j+4]=1-0.647*inten;segC[j+5]=1-inten;
+        col[i*3]=INK[0]+(1-INK[0])*inten;col[i*3+1]=INK[1]+(0.353-INK[1])*inten;col[i*3+2]=INK[2]-INK[2]*inten;  // orange spreads into the black
+      }
+    }
+    prevR[i*3]=px;prevR[i*3+1]=py;prevR[i*3+2]=pz;
+  }
+  pAttr.needsUpdate=true; geo.setDrawRange(0,visN);
+  if(explode){ streaks.visible=true; segGeo.attributes.position.needsUpdate=true; segGeo.attributes.color.needsUpdate=true; geo.attributes.color.needsUpdate=true; }
+  else if(streaks.visible){ streaks.visible=false; for(let i=0;i<M;i++){col[i*3]=INK[0];col[i*3+1]=INK[1];col[i*3+2]=INK[2];} geo.attributes.color.needsUpdate=true; }
+  { const cx=tx,cy=ty,cz=tz-CZ;
+    const wxx=cx+7*Math.sin(cy*0.045+tm*0.9), wyy=cy+7*Math.sin(cz*0.045-tm*0.8), wzz=cz+7*Math.sin(cx*0.045+tm);
+    const vx=-S*cy+A*Math.sin(wyy*f1+tm)*Math.cos(wzz*f2-tm)-pull*cx;
+    const vy= S*cx+A*Math.sin(wzz*f1-tm)*Math.cos(wxx*f2+tm)-pull*cy;
+    const vz= A*Math.sin(wxx*f1+tm)*Math.cos(wyy*f2+tm)-pull*cz+0.5*Math.sin((cx*cx+cy*cy)*0.004+tm);
+    tx+=vx*ST;ty+=vy*ST;tz+=vz*ST; }
+  const tpx=tx*SC*spread,tpy=(tz-CZ)*SC*spread,tpz=ty*SC*spread;
+  tpAttr.array[0]=tpx;tpAttr.array[1]=tpy;tpAttr.array[2]=tpz;tpAttr.needsUpdate=true;
+  for(let i=0;i<TR-1;i++){ trP[i*3]=trP[(i+1)*3];trP[i*3+1]=trP[(i+1)*3+1];trP[i*3+2]=trP[(i+1)*3+2]; }
+  trP[(TR-1)*3]=tpx;trP[(TR-1)*3+1]=tpy;trP[(TR-1)*3+2]=tpz;trpAttr.needsUpdate=true;
+  flash*=0.9;
+  tCore.material.size=0.14*(1+0.85*flash); tCore.material.opacity=Math.min(1,0.82+0.6*flash)*(0.92+0.08*Math.sin(now*0.002));
+  tHalo.material.size=0.4*(1+0.6*flash); tHalo.material.opacity=(0.2+0.55*flash)*Math.min(1,p*1.6); trail.material.opacity=0.85*Math.min(1,p*1.4);
+  group.rotation.y+=0.0006;                                              // slow self-rotation only
+  rV.textContent=D.V.toFixed(3); rS.textContent=STAGES[D.stage];   // always the real state
+  renderer.render(scene,camera); requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ============ TRANSMISSION — one with the descent above ============ */
+const AMBIENT={
+  0:["Displacement registered. The admissible set is still everything.","No trajectory has been ruled out. The descent has, nonetheless, already begun.","V is large. There is exactly one direction it is permitted to move."],
+  1:["The amplitude is shrinking. What was forgotten this step will not be recalled.","Admissible futures: decreasing. The set does not reopen.","The first proof the fall is one-way — the reading dropped and did not recover."],
+  2:["The flow is a contraction. By construction it admits exactly one fixed point.","Distant configurations are being identified with one another.","Distance to the resting state: strictly decreasing, every step."],
+  3:["Energy exits the system and is not refunded.","The basin has acquired walls. Beyond them is no longer reachable.","Degrees of freedom are being retired. One remains."],
+  4:["The gradient has vanished. Nothing remains to minimize.","The configuration is at rest at the floor of its own landscape.","Function attained — the state the dynamics were always going to select."],
+  5:["Perturbation applied. The deviation decays to zero without intervention.","Every neighbouring state returns here. None is retained.","Stability is not being maintained. It is structural."],
+  6:["The basin is expanding. Configurations that began elsewhere resolve inward.","The fixed point no longer waits. It recruits.","No exit was defined. None was ever defined."]
+};
+const EVENTL={1:"Transient initiated.",2:"Contraction confirmed — one fixed point.",3:"Dissipation. Walls closed.",4:"Gradient null. Equilibrium attained.",5:"Asymptotic stability certified.",6:"Terminal attractor. Basin unbounded."};
+const log=document.getElementById('log');
+const s_stage=document.getElementById('s-stage'),s_v=document.getElementById('s-v'),s_fed=document.getElementById('s-fed'),s_feeders=document.getElementById('s-feeders');
+let pending=[], typing=false, mission=0, txStarted=false;
+const pick=a=>a[Math.floor(Math.random()*a.length)], pad=n=>String(n).padStart(2,'0');
+const clock=s=>`${pad(Math.floor(s/3600)%24)}:${pad(Math.floor(s/60)%60)}:${pad(s%60)}`;
+function status(){ s_stage.textContent=STAGES[D.stage];s_v.textContent=D.V.toFixed(3);s_fed.textContent=D.fed.toFixed(2)+' SOL';s_feeders.textContent=D.feeders; }
+const near=()=>log.scrollHeight-log.scrollTop-log.clientHeight<90, scrl=()=>{if(near())log.scrollTop=log.scrollHeight;};
+function render(e){
+  typing=true; mission+=28+Math.floor(Math.random()*120);
+  log.querySelectorAll('.cur').forEach(c=>c.remove());
+  const last=log.querySelector('.entry:last-child'); if(last) last.classList.add('past');
+  if(e.type==='event'){ const led=document.createElement('div');led.className='ledger';
+    led.innerHTML=`ADVANCED <span class="to">→ ${STAGES[e.stage]}</span><span class="bar"></span><span class="d">fed Δ +${e.delta.toFixed(2)} SOL</span>`; log.appendChild(led); }
+  const w=document.createElement('div'); w.className='entry';
+  w.innerHTML=`<div class="entry-h"><span class="ts">${clock(mission)}Z</span><span class="tag">${STAGES[e.stage]}</span><span class="vv">V ${e.v.toFixed(3)} ↓</span></div><div class="line"><span class="pfx">› </span><span class="tw"></span><span class="cur">▌</span></div>`;
+  log.appendChild(w); scrl();
+  const tw=w.querySelector('.tw'); let i=0;
+  const id=setInterval(()=>{ tw.textContent=e.text.slice(0,++i); scrl(); if(i>=e.text.length){clearInterval(id);typing=false;} },16);
+}
+onBuy.push(()=>{ if(txStarted) status(); });
+onAdvance.push((st,dl)=>{ if(txStarted) pending.unshift({type:'event',stage:st,delta:dl,text:EVENTL[st],v:D.V}); });
+function startTx(){ if(txStarted)return; txStarted=true; status();
+  pending.push({type:'ambient',stage:D.stage,text:"Channel open. Internal state exposed. Configuration unresolved.",v:D.V});
+  setInterval(()=>{ if(!typing&&pending.length) render(pending.shift()); },150);
+  (function amb(){ setTimeout(()=>{ pending.push({type:'ambient',stage:D.stage,text:pick(AMBIENT[D.stage]),v:D.V}); amb(); },4200+Math.random()*4200); })();
+}
+const io=new IntersectionObserver(es=>{es.forEach(x=>{if(x.isIntersecting){startTx();io.disconnect();}});},{threshold:0.25});
+io.observe(document.getElementById('xmit'));
+status();
+</script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LYAPUNOV · $LPNV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#ffffff;
+    --ink:#0a0a0a;
+    --line:#111111;
+    --mute:#9a9a9a;
+    --orange:#ff5a00;
+    --m:clamp(20px,4.2vw,64px);
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%;background:var(--paper);color:var(--ink);
+    font-family:"Archivo",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  canvas#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0;touch-action:none}
+
+  .rule{position:fixed;background:var(--line);z-index:2;opacity:0;animation:draw 1.1s ease forwards}
+  .rule.top{left:var(--m);right:var(--m);top:calc(var(--m) + 34px);height:1px;transform-origin:left;animation-name:drawX}
+  .rule.bot{left:var(--m);right:var(--m);bottom:calc(var(--m) + 30px);height:1px;transform-origin:left;animation-name:drawX;animation-delay:.15s}
+  @keyframes drawX{from{opacity:1;transform:scaleX(0)}to{opacity:1;transform:scaleX(1)}}
+
+  .chrome{position:fixed;inset:0;z-index:3;pointer-events:none}
+  .chrome > *{opacity:0;animation:fade .9s ease forwards}
+  @keyframes fade{to{opacity:1}}
+
+  .hdr{position:absolute;left:var(--m);right:var(--m);top:var(--m);display:flex;
+    justify-content:space-between;align-items:baseline;animation-delay:.25s}
+  .wm{font-weight:700;font-size:clamp(15px,1.5vw,19px);letter-spacing:.16em}
+  .wm b{color:var(--orange)}
+  .rt{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.2em;color:var(--mute)}
+  .rt a{pointer-events:auto;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--orange);padding-bottom:2px}
+  .rt a:hover{color:var(--orange)}
+
+  .say{position:absolute;left:var(--m);bottom:calc(var(--m) + 64px);max-width:min(20ch,60vw);
+    font-weight:600;font-size:clamp(22px,3.6vw,46px);line-height:1.04;letter-spacing:-0.015em;
+    animation-delay:.7s}
+  .say em{font-style:normal;color:var(--orange)}
+  .say .sub{display:block;margin-top:1.1rem;font-family:"Space Mono",monospace;font-weight:400;
+    font-size:clamp(10px,1vw,12px);letter-spacing:.12em;color:var(--mute);max-width:34ch;line-height:1.6}
+
+  .foot{position:absolute;left:var(--m);right:var(--m);bottom:var(--m);display:flex;
+    justify-content:space-between;gap:2em;font-family:"Space Mono",monospace;font-size:11px;
+    letter-spacing:.14em;color:var(--mute);animation-delay:.85s}
+  .foot .mid{color:var(--ink)}
+  .foot b{color:var(--ink);font-weight:400}
+  .foot .obs{pointer-events:auto;cursor:pointer;color:var(--ink);background:none;border:0;
+    font:inherit;letter-spacing:.18em}
+  .foot .obs:hover{color:var(--orange)}
+
+  .read{position:absolute;right:var(--m);top:calc(var(--m) + 52px);text-align:right;
+    font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--mute);
+    line-height:1.9;animation-delay:1s}
+  .read b{color:var(--ink);font-weight:400}
+  .read .o{color:var(--orange)}
+
+  .hint{position:absolute;left:50%;bottom:calc(var(--m) + 64px);transform:translateX(-50%);
+    font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.24em;color:#c8c8c8;animation-delay:1.6s}
+
+  @media (max-width:720px){ .say{font-size:30px;bottom:auto;top:38vh} .read{display:none} }
+</style>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <div class="rule top"></div>
+  <div class="rule bot"></div>
+
+  <div class="chrome">
+    <div class="hdr">
+      <div class="wm">LYAPUNOV<b>.</b></div>
+      <div class="rt">$LPNV&nbsp;&nbsp;/&nbsp;&nbsp;SOLANA&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#">buy ●</a></div>
+    </div>
+
+    <div class="read">
+      <div>V&nbsp; <b id="r-v">1.000</b></div>
+      <div>λ&nbsp; <b id="r-l">&lt; 0</b></div>
+      <div>state&nbsp; <span class="o" id="r-s">PERTURBATION</span></div>
+    </div>
+
+    <div class="say">
+      It becomes the <em>attractor</em>.
+      <span class="sub">A system displaced far from equilibrium, falling toward the one state it was always going to rest at — and which it can never leave.</span>
+    </div>
+
+    <div class="foot">
+      <div>LORENZ&nbsp;FIELD&nbsp;—&nbsp;<b>N≈8000</b>&nbsp;&nbsp;σ10&nbsp;ρ28&nbsp;β8/3</div>
+      <div class="mid">V&nbsp;↓&nbsp;·&nbsp;IMMUTABLE&nbsp;·&nbsp;OWNERLESS</div>
+      <button class="obs" id="obs">OBSERVE&nbsp;↻</button>
+    </div>
+
+    <div class="hint">DRAG TO ORBIT</div>
+  </div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const PAPER=0xffffff;
+// vibrant warm ramp, by velocity: inky → deep red → orange → hot amber
+const INK=[0.09,0.09,0.09], DEEP=[0.886,0.227,0.0], ORANGE=[1.0,0.416,0.0], AMBER=[1.0,0.76,0.227];
+
+const canvas=document.getElementById('gl');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(PAPER,6.5,16.5);            // far points dissolve into the page
+const camera=new THREE.PerspectiveCamera(46,1,0.1,100);
+camera.position.set(0,0.2,9.8);
+
+const group=new THREE.Group();
+group.rotation.set(-0.42,0.2,0);
+scene.add(group);
+
+// soft round sprite so points read as dots, not squares
+function disc(){
+  const s=64,c=document.createElement('canvas');c.width=c.height=s;
+  const g=c.getContext('2d'),r=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.4,'rgba(255,255,255,.85)');r.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=r;g.fillRect(0,0,s,s);
+  const t=new THREE.CanvasTexture(c);return t;
+}
+
+const M=8000, SC=0.105, CZ=25, DT=0.005;
+const lor=new Float32Array(M*3), pos=new Float32Array(M*3), col=new Float32Array(M*3);
+
+function scatter(){
+  for(let i=0;i<M;i++){
+    const u=Math.random(),v=Math.random(),th=Math.acos(2*u-1),ph=2*Math.PI*v,rr=27*Math.cbrt(Math.random());
+    lor[i*3]=rr*Math.sin(th)*Math.cos(ph);
+    lor[i*3+1]=rr*Math.sin(th)*Math.sin(ph);
+    lor[i*3+2]=25+rr*Math.cos(th);
+    col[i*3]=INK[0];col[i*3+1]=INK[1];col[i*3+2]=INK[2];
+  }
+}
+scatter();
+
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const SPRITE=disc();
+const mat=new THREE.PointsMaterial({size:0.046,map:SPRITE,vertexColors:true,transparent:true,
+  opacity:0.95,depthWrite:false,sizeAttenuation:true});
+const points=new THREE.Points(geo,mat); group.add(points);
+
+// the single orange center — the one state it can never leave (always on top of the black cloud)
+const centerGeo=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0]),3));
+const halo=new THREE.Points(centerGeo,new THREE.PointsMaterial({color:0xff5a00,map:SPRITE,size:56,sizeAttenuation:false,transparent:true,opacity:0,depthWrite:false,depthTest:false}));
+const core=new THREE.Points(centerGeo,new THREE.PointsMaterial({color:0xff5a00,map:SPRITE,size:18,sizeAttenuation:false,transparent:true,opacity:0,depthWrite:false,depthTest:false}));
+group.add(halo); group.add(core);
+
+const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+function ramp(s){
+  if(s<0.34) return lerp(INK,DEEP,s/0.34);
+  if(s<0.67) return lerp(DEEP,ORANGE,(s-0.34)/0.33);
+  return lerp(ORANGE,AMBER,(s-0.67)/0.33);
+}
+
+const STAGES=["PERTURBATION","TRANSIENT","CONTRACTION","DISSIPATION","EQUILIBRIUM","ASYMPTOTIC","ATTRACTOR"];
+const rV=document.getElementById('r-v'), rS=document.getElementById('r-s');
+
+let T=0; const REVEAL=9.0;
+function reset(){ T=0; scatter(); geo.attributes.color.needsUpdate=true; }
+document.getElementById('obs').addEventListener('click',reset);
+
+// pointer orbit + idle drift
+let drag=false,pX=0,pY=0,vY=0,vX=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;pX=e.clientX;pY=e.clientY;});
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{if(!drag)return;vY=(e.clientX-pX)*0.005;vX=(e.clientY-pY)*0.005;
+  group.rotation.y+=vY;group.rotation.x+=vX;pX=e.clientX;pY=e.clientY;});
+
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);
+  camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+
+const cAttr=geo.attributes.color, pAttr=geo.attributes.position;
+let t0=performance.now();
+function tick(now){
+  const dtm=Math.min(50,now-t0)/1000; t0=now; T+=dtm;
+  const p=Math.min(1,T/REVEAL);
+  const jit=0.85-0.6*p;                              // very scattered → fluffy (never a thin line)
+
+  for(let i=0;i<M;i++){
+    let lx=lor[i*3],ly=lor[i*3+1],lz=lor[i*3+2];
+    const sx=10*(ly-lx), sy=lx*(28-lz)-ly, sz=lx*ly-(8/3)*lz;   // Lorenz field
+    lx+=sx*DT + (Math.random()-0.5)*jit;
+    ly+=sy*DT + (Math.random()-0.5)*jit;
+    lz+=sz*DT + (Math.random()-0.5)*jit;
+    lor[i*3]=lx; lor[i*3+1]=ly; lor[i*3+2]=lz;
+    pos[i*3]=lx*SC; pos[i*3+1]=(lz-CZ)*SC; pos[i*3+2]=ly*SC;    // z→up, y→depth
+  }
+  pAttr.needsUpdate=true;                                       // points stay ink-black; colour set once
+
+  if(!drag){ group.rotation.y+=vY+0.0011; group.rotation.x+=vX; vY*=0.93; vX*=0.93;
+    group.rotation.x=Math.max(-1.1,Math.min(1.1,group.rotation.x)); }
+
+  // the orange center: present throughout, igniting as the system converges
+  const pulse=0.72+0.28*Math.sin(now*0.0026), lit=0.42+0.58*p;
+  core.material.opacity=lit*pulse; halo.material.opacity=lit*0.16*pulse;
+
+  const V=0.06+0.94*Math.exp(-3.25*p); rV.textContent=V.toFixed(3);
+  rS.textContent=STAGES[p>=1?6:Math.min(6,Math.floor(p/0.16))];
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

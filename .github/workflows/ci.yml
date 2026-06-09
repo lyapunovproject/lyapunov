@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  program:
+    name: program · fmt + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: solana/program
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: test
+        run: cargo test --manifest-path programs/lyapunov-descent/Cargo.toml
+
+  sbf-build:
+    name: program · build-sbf
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - name: cargo build-sbf
+        working-directory: solana/program
+        run: cargo build-sbf
